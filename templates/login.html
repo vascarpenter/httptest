@@ -1,0 +1,18 @@
+{% include "_header.html" %}
+<div id="login">
+    <p class="main-title">{{Title}}</p>
+    <form action="/loginform" method="post" class="board-form">
+        <span class="label">ユーザーID</span><input type="text" name="userid" class="input" required><br>
+        <br>
+        <span class="label">パスワード</span><input type="password" name="password" class="input" required><br>
+        <br>
+        <button type="submit" name="login" class="submit">ログイン</button>
+        <br>
+        <br>
+        <button type="button" name="register" class="submit" onclick="location.href='/register'">新規ユーザ登録</button>
+    </form>
+    {% if NoUser %}
+    <p class="error">{{NoUser}}</p>
+    {% endif %}
+</div>
+{% include "_footer.html" %}

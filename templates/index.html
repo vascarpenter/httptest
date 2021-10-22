@@ -1,0 +1,37 @@
+{% include "_header.html" %}
+
+<center>
+    <div>
+        {{ Title }}&nbsp;
+        <button type="button" onclick="location.href='/logout'">ログアウト</button>
+    </div>
+    <div id="child1">
+        <table border="1" cellspacing="0" cellpadding="5" bordercolor="#333333">
+            &nbsp;&nbsp;
+            <tr>
+                <th>日付</th>
+                <th>体温</th>
+                <th>メモ</th>
+            </tr>
+            {% for entry in entries %}
+            &nbsp;&nbsp;
+            <tr>
+                <td>{{ entry.date }}</td>
+                <td>{{ entry.temp }}</td>
+                <td>{{ entry.memo }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <br/>
+
+    <form action="/form" method="post" class="board-form">
+        <span class="label">体温：</span>
+        <input type="text" name="temp" class="input" required> 度 <br><br>
+        <span class="label">メモ&nbsp;&nbsp;</span>
+        <input type="text" name="memo" class="input" style="width:90%; box-sizing:border-box"><br><br>
+        <button type="submit" name="register" class="submit">登録</button>
+        <br>
+    </form>
+</center>
+{% include "_footer.html" %}

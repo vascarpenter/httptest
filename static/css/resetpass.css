@@ -1,0 +1,108 @@
+body {
+  background: #ffffff;
+  color: #000000;
+  font: 87.5%/1.5em 'Open Sans', sans-serif;
+  margin: 0;
+}
+
+input {
+  border: none;
+  font-family: 'Open Sans', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5em;
+  padding: 0;
+  -webkit-appearance: none;
+}
+
+p {
+  line-height: 1.5em;
+}
+
+after { clear: both; }
+
+#resetpass {
+  margin: 50px auto;
+  width: 440px;
+}
+
+#resetpass form {
+  margin: auto;
+  padding: 22px 22px 22px 22px;
+  width: 100%;
+  border-radius: 5px;
+  background: #e4fffb;
+  border-top: 3px solid #434a52;
+  border-bottom: 3px solid #434a52;
+}
+
+#resetpass form span {
+  background-color: #dddddd;
+  border-radius: 3px 0px 0px 3px;
+  border-right: 3px solid #434a52;
+  color: #606468;
+  display: block;
+  float: left;
+  line-height: 50px;
+  text-align: center;
+  width: 120px;
+  height: 50px;
+}
+
+#resetpass form input[type="text"] {
+  background-color: #ffffff;
+  border-radius: 0px 3px 3px 0px;
+  color: #000000;
+  margin-bottom: 1em;
+  padding: 0 16px;
+  width: 280px;
+  height: 50px;
+}
+
+#resetpass form input[type="password"] {
+  background-color: #ffffff;
+  border-radius: 0px 3px 3px 0px;
+  color: #000000;
+  margin-bottom: 1em;
+  padding: 0 16px;
+  width: 280px;
+  height: 50px;
+}
+  
+#resetpass form input[type="password"] {
+  background-color: #ffffff;
+  border-radius: 0px 3px 3px 0px;
+  color: #000000;
+  margin-bottom: 1em;
+  padding: 0 16px;
+  width: 280px;
+  height: 50px;
+}
+
+#resetpass form button[type="submit"] {
+  background: #d3fcc9;
+  border: 0;
+  width: 100%;
+  height: 40px;
+  border-radius: 3px;
+  color: black;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+#resetpass form button[type="submit"]:hover {
+  background: #16aa56;
+}
+
+#resetpass button[type="button"] {
+  background: #f8d5d5;
+  border: 0;
+  width: 100%;
+  height: 40px;
+  border-radius: 3px;
+  color: black;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+#resetpass button[type="button"]:hover {
+    background: #f88787;
+}
+  

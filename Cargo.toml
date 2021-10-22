@@ -1,0 +1,23 @@
+[package]
+name = "httptest"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = { version = "3", features = ["openssl"] }
+actix-files = "0.5.0"
+actix-identity = "0.3.1"
+oracle = "0.5.3"
+r2d2 = "0.8.9"
+r2d2-oracle = "0.2.0"
+thiserror = "*"
+env_logger = "0.6.2"
+log = "0.4.0"
+tera = "1"
+serde = { version = "^1.0.101", features = ["derive"] }
+serde_json = "^1.0.41"
+bcrypt = "0.10.1"
+openssl = "0.10.36"
+structopt = "0.3"
