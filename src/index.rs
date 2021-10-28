@@ -4,6 +4,7 @@ use actix_web::http::header;
 use r2d2::Pool;
 use r2d2_oracle::OracleConnectionManager;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tera::{Context, Tera};
 use thiserror::Error;
 
@@ -25,6 +26,9 @@ pub enum MyError {
 
 	#[error("template error")]
 	RendererError(#[from] tera::Error),
+
+	#[error("json convert error")]
+	JSONError(#[from] serde_json::Error),
 }
 
 impl ResponseError for MyError {}
@@ -38,15 +42,10 @@ pub async fn index(db: web::Data<Pool<OracleConnectionManager>>,
 	let conn = db.get()?;
 	let mut userid = 0;
 	if let Some(idstr) = id.identity() {
-		if let Ok(idnum) = idstr.parse::<i32>() {
-			userid = idnum;
-			// login, get user name
-			let sql = "SELECT USERID FROM BTUSERS WHERE ID = :1";
-			if let Ok(username) = conn.query_row_as::<String>(sql, &[&userid]) {
-				let str = format!("ようこそ、 {} さん", username);
-				ctx.insert("Title", &str);
-			}
-		}
+		let v: Value = serde_json::from_str(idstr.as_str())?;
+		let str = format!("ようこそ、 {} さん", v["username"]);
+		ctx.insert("Title", &str);
+		userid = v["userid"].as_i64().map_or(0, |v| v);
 	}
 	if userid == 0 {
 		id.forget();
@@ -97,9 +96,10 @@ pub(crate) async fn post_index(db: web::Data<Pool<OracleConnectionManager>>,
 	let conn = db.get()?;
 	let mut userid = 0;
 	if let Some(idstr) = id.identity() {
-		if let Ok(idnum) = idstr.parse::<i32>() {
-			userid = idnum;
-		}
+		let v: Value = serde_json::from_str(idstr.as_str())?;
+
+		// println!("{:?} info: {}", v, info.indexby);
+		userid = v["userid"].as_i64().map_or(0, |v| v);
 	}
 
 	if userid == 0 {

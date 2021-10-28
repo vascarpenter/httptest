@@ -25,13 +25,13 @@
 
 ### 実行
 
-- `./target/debug/httptest --ocistring admin/pass@//123.45.67/XEPDB1 --certkey <certkey> --domain <domain> --privkey <privkey>`
-- `./target/debug/httptest --dbenv OCISTRING --certkey cert.pem --domain hogehoge.com --privkey priv.pem`
+- `./target/debug/httptest --ocistring admin/pass@//123.45.67/XEPDB1 --ssl --certkey <certkey> --domain <domain> --privkey <privkey>`
+- `./target/debug/httptest --dbenv OCISTRING`
 
     - (環境変数`OCISTRING`に接続文字列 たとえば `admin/pass@//123.45.67/XEPDB1`が入っている場合)
 
 ### 変更点
 
 - StructOpt 使用
-- SSL化
+- SSL化 (--ssl フラグの使用時のみ)
 - `--register`フラグをつけると、webからuser追加が可能 (いたずら防止)

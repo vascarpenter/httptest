@@ -7,6 +7,7 @@ use log::info;
 use r2d2::Pool;
 use r2d2_oracle::OracleConnectionManager;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use tera::{Context, Tera};
 
 use crate::GlobalData;
@@ -30,17 +31,21 @@ pub async fn register(
 
 	if globals.lock().unwrap().register == false {
 		// registration undefined; go to login
+		let json = json!({"error": "noreg"});  // not allowed registeration　を register formに表示させる
+		id.remember(json.to_string());
 		return Ok(HttpResponse::SeeOther()
 			.header(header::LOCATION, "/login")
 			.finish());
 	}
 
 	if let Some(idstr) = id.identity() {
+		let v: Value = serde_json::from_str(&idstr)?;
 
 		// /registerform側でセットしたエラーを示す特別なユーザID
-		if idstr == "#duplicate" {
+		if v["error"] == "duplicate" {
+			// /registerform側でセットしたエラーを示す特別なユーザID
 			ctx.insert("NoUser", &String::from("アカウント名が重複しています"));
-		} else if idstr == "#tooshort" {
+		} else if v["error"] == "tooshort" {
 			ctx.insert("NoUser", &String::from("アカウント名が短すぎます"));
 		}
 		id.forget();
@@ -65,7 +70,8 @@ pub(crate) async fn post_register(db: web::Data<Pool<OracleConnectionManager>>,
 	let userpass = params.userpass.to_owned();                // form から userpassを読み込む
 	if username.len() < 4 {
 		info!("user id too short");
-		id.remember(String::from("#tooshort"));  // too short userid　を register formに表示させる
+		let json = json!({"error": "tooshort"});  // too short userid　を register formに表示させる
+		id.remember(json.to_string());
 
 		return Ok(HttpResponse::SeeOther()
 			.header(header::LOCATION, "/register")
@@ -78,7 +84,8 @@ pub(crate) async fn post_register(db: web::Data<Pool<OracleConnectionManager>>,
 		if count > 0 {
 			// duplicate username in db
 			info!("user duplicates");
-			id.remember(String::from("#duplicate"));  // duplicate entry　を register formに表示させる
+			let json = json!({"error": "duplicate"});  // duplicate entry　を register formに表示させる
+			id.remember(json.to_string());
 			return Ok(HttpResponse::SeeOther()
 				.header(header::LOCATION, "/register")
 				.finish());
@@ -87,6 +94,7 @@ pub(crate) async fn post_register(db: web::Data<Pool<OracleConnectionManager>>,
 
 	if let Ok(crypted) = bcrypt::hash(&userpass, 10) {
 		let sql = r##"INSERT INTO BTUSERS (USERID, USERPASS) VALUES (:1,:2)"##;
+		// IDはdb側が自動更新incrementする
 		conn.execute(sql, &[&username, &crypted])?;
 		conn.commit()?;
 	}

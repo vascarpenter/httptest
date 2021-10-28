@@ -11,7 +11,7 @@ use actix_files as fs;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{App, HttpServer};
 use actix_web::middleware::Logger;
-use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
+use openssl::ssl::{SslAcceptor, SslAcceptorBuilder, SslFiletype, SslMethod};
 use r2d2_oracle::OracleConnectionManager;
 use structopt::StructOpt;
 use tera::Tera;
@@ -26,7 +26,7 @@ mod register;
 pub struct HttpTest {
     /// domain name
     #[structopt(short, long)]
-    domain: String,
+    domain: Option<String>,
 
     /// port
     #[structopt(short, long, default_value = "443")]
@@ -34,11 +34,11 @@ pub struct HttpTest {
 
     /// privkey for SSL certificate
     #[structopt(short = "k", long = "privkey")]
-    privkey: String,
+    privkey: Option<String>,
 
     /// certkey for SSL certificate
     #[structopt(short = "c", long = "certkey")]
-    certkey: String,
+    certkey: Option<String>,
 
     /// register user or not
     #[structopt(short, long)]
@@ -69,18 +69,22 @@ async fn main() -> std::io::Result<()> {
 
     let templates = Tera::new("templates/**/*").unwrap();
     //let in_docker = Path::new("/.dockerenv").exists();
-
-    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
-    builder.set_private_key_file(&options.privkey, SslFiletype::PEM).unwrap();
-    builder.set_certificate_chain_file(&options.certkey).unwrap();
+    let mut builder: SslAcceptorBuilder;
+    builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    if options.ssl {
+        builder.set_private_key_file(&options.privkey.unwrap(), SslFiletype::PEM).unwrap();
+        builder.set_certificate_chain_file(&options.certkey.unwrap()).unwrap();
+    }
 
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
     env_logger::init();
 
     // 起動方法
-    // httptest -o $OCISTRING
-    // httptest --dbenv OCISTRING → 環境変数 OCISTRING の中身のデータベースを使う (IntelliJ用..)
-    // SSL化したため --certkey <certkey> --domain <domain> --privkey <privkey> の指定も必要
+    // httptest -o 接続文字列 あるいは
+    // httptest --dbenv 環境変数名 → 環境変数に記載された接続文字列のデータベースを使う (IntelliJ用..)
+    // SSLの場合は --ssl --certkey <certkey path> --domain <domain> --privkey <privkey path> の指定も必要
+
+    // global data, fetched from each workers
 
     let data = Arc::new(Mutex::new(GlobalData::default()));
 
@@ -96,12 +100,15 @@ async fn main() -> std::io::Result<()> {
     if let Some(dbe) = options.dbenv {
         match std::env::var(&dbe)
         {
-            Err(_) => eprintln!("Error get env var {}", dbe.to_string()),
+            Err(_) => {
+                eprintln!("Error get env var {}", dbe.to_string());
+                exit(1);
+            }
             Ok(v) => ocistring = v,
         }
     }
     if ocistring == "" {
-        eprintln!("--ocistring <ocistring> or --dbenv <ENV name which holds ocistring> needed");
+        eprintln!("--ocistring <oracle db connect string> or --dbenv <ENV name which holds oracle db connection string> needed");
         exit(1);
     }
 
@@ -116,36 +123,50 @@ async fn main() -> std::io::Result<()> {
         atmarksep[1]);
 
     let pool = r2d2::Pool::builder()
-        .max_size(15)
+        .max_size(5)
         .build(manager)
         .expect("Failed to create pool");
 
     let host = format!("0.0.0.0:{}", &options.port);
-    let domain = options.domain.to_owned();
+    let domain = if options.ssl {
+        options.domain.map_or("".to_string(), |v| v.to_string())
+    } else {
+        "".to_string()
+    };
 
-
-    HttpServer::new(move || {
+    let sslmode = options.ssl;
+    let server = HttpServer::new(move || {
+        // ssl と non ssl 共通部分
         App::new()
             .wrap(Logger::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&[0; 32])    // <- create cookie identity policy
                     .domain(&domain)
                     .name("auth-cookie")
-                    .secure(true)))
-            .service(index::index)
-            .service(index::post_index)
+                    .secure(sslmode)))
             .service(login::login)
             .service(login::post_login)
             .service(logout::logout)
             .service(register::register)
             .service(register::post_register)
+            .service(index::index)
             .service(fs::Files::new("/static", "./static"))
             .data(pool.clone())
             .data(templates.clone())
             .data(data.clone())
-    })
-        .bind_openssl(&host, builder)
-        .expect(&format!("cannot run server at  {}", &host))
+    });
+    if options.ssl {
+        return server
+            .workers(2)
+            .bind_openssl(&host, builder)
+            .expect(&format!("cannot run SSL server at  {}", &host))
+            .run()
+            .await;
+    }
+    server
+        .workers(2)
+        .bind(&host)
+        .expect(&format!("cannot run server at  {} ", &host))
         .run()
         .await
 }

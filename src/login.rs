@@ -5,6 +5,7 @@ use log::info;
 use r2d2::Pool;
 use r2d2_oracle::OracleConnectionManager;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use tera::{Context, Tera};
 
 use crate::index::MyError;
@@ -25,12 +26,15 @@ pub async fn login(
     let mut ctx = Context::new();
 
     if let Some(idstr) = id.identity() {
+        let v: Value = serde_json::from_str(&idstr)?;
 
         // /loginform側でセットしたエラーを示す特別なユーザID
-        if idstr == "#nouser" {
+        if v["error"] == "nouser" {
             ctx.insert("NoUser", &String::from("そのアカウントは存在しません"));
-        } else if idstr == "#notequal" {
+        } else if v["error"] == "notequal" {
             ctx.insert("NoUser", &String::from("パスワードが間違っています"));
+        } else if v["error"] == "noreg" {
+            ctx.insert("NoUser", &String::from("新規登録は停止中です"));
         }
         id.forget();
     }
@@ -63,14 +67,19 @@ pub(crate) async fn post_login(db: web::Data<Pool<OracleConnectionManager>>,
             // passwordが一致しなかった場合
             if equal == false {
                 info!("password wrong");
-                id.remember(String::from("#notequal"));  // wrong password　を login formに表示させる
+                let json = json!({"error": "notequal"});  // wrong password　を login formに表示させる
+                id.remember(json.to_string());
                 return Ok(HttpResponse::SeeOther()
                     .header(header::LOCATION, "/login")
                     .finish());
             }
 
             // id, password が一致した!
-            id.remember(dbuserid.to_string());
+            let json = json!({
+                    "userid": dbuserid,
+                    "username": &username,
+                });  // wrong password　を login formに表示させる
+            id.remember(json.to_string());
             return Ok(HttpResponse::SeeOther()
                 .header(header::LOCATION, "/")
                 .finish());
@@ -78,7 +87,8 @@ pub(crate) async fn post_login(db: web::Data<Pool<OracleConnectionManager>>,
         Err(_) => {
             // dbにユーザーIDが存在しない
             info!("user not found");
-            id.remember(String::from("#nouser")); // no user を login formに表示させる
+            let json = json!({"error": "nouser"});  // wrong password　を login formに表示させる
+            id.remember(json.to_string());
             return Ok(HttpResponse::SeeOther()
                 .header(header::LOCATION, "/login")
                 .finish());
