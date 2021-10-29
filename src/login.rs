@@ -78,7 +78,7 @@ pub(crate) async fn post_login(db: web::Data<Pool<OracleConnectionManager>>,
             let json = json!({
                     "userid": dbuserid,
                     "username": &username,
-                });  // wrong password　を login formに表示させる
+                });
             id.remember(json.to_string());
             return Ok(HttpResponse::SeeOther()
                 .header(header::LOCATION, "/")

@@ -149,6 +149,7 @@ async fn main() -> std::io::Result<()> {
             .service(logout::logout)
             .service(register::register)
             .service(register::post_register)
+            .service(index::post_index)
             .service(index::index)
             .service(fs::Files::new("/static", "./static"))
             .data(pool.clone())

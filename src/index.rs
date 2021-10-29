@@ -97,9 +97,9 @@ pub(crate) async fn post_index(db: web::Data<Pool<OracleConnectionManager>>,
 	let mut userid = 0;
 	if let Some(idstr) = id.identity() {
 		let v: Value = serde_json::from_str(idstr.as_str())?;
-
-		// println!("{:?} info: {}", v, info.indexby);
 		userid = v["userid"].as_i64().map_or(0, |v| v);
+
+		//println!("{:?} userid={}", v, userid);
 	}
 
 	if userid == 0 {
