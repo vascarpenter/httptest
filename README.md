@@ -10,9 +10,10 @@
 
 ### なぜ作ったのか
 
-- actixは最速のweb platform
-- oracleはほぼ無料でapp serverを公開しているためすぐdeployするため
-- Rust は強固な基盤をもち、モジュール化がgolangよりはるかに楽だから
+- actixは最速のweb platform, SSLサポートがある
+- oracleはほぼ無料でapp serverを公開しているためすぐdeployできる
+  - x86 や aarch64 バイナリを dockerでビルドしてバイナリのみサーバーに転送、実行
+- Rust は強固な基盤をもち、バグを作りづらく、モジュール化がgolangよりはるかに楽だから
 - ORMを使うほどたくさん SQLを使っていないから
 
 ### ビルド
@@ -28,10 +29,13 @@
 - `./target/debug/httptest --ocistring admin/pass@//123.45.67/XEPDB1 --ssl --certkey <certkey> --domain <domain> --privkey <privkey>`
 - `./target/debug/httptest --dbenv OCISTRING`
 
-    - (環境変数`OCISTRING`に接続文字列 たとえば `admin/pass@//123.45.67/XEPDB1`が入っている場合)
+- 起動時オプション
+  - `--dbenv <環境変数>` あるいは `--ocistring <接続文字列>` dbへの接続方法を指定
+  - `--ssl`  SSLサポート (`--certkey, --privkey, --domain` を指定すること)
+  - `--register` ユーザー登録ページを有効にする つけないと登録もできません
+  - `--port` 待ち受けポート番号 ただし1024番ポート以前のポート番号は、開放時にroot権限が必要です
 
 ### 変更点
 
-- StructOpt 使用
-- SSL化 (--ssl フラグの使用時のみ)
-- `--register`フラグをつけると、webからuser追加が可能 (いたずら防止)
+- bug fix
+- README をわかりやすく
