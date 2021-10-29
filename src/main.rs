@@ -4,7 +4,6 @@ extern crate openssl;
 extern crate r2d2;
 extern crate tera;
 
-use std::process::exit;
 use std::sync::{Arc, Mutex};
 
 use actix_files as fs;
@@ -61,11 +60,23 @@ pub struct HttpTest {
 pub struct GlobalData {
     register: bool,
 }
+// oracle形式の connection string を分解して、username,password,connect stringの形式にする
+
+fn divide_ocistring(ocistring: String) -> Vec<String>
+{
+    let mut v = Vec::new();
+    let atmarksep: Vec<&str> = ocistring.split("@").collect();
+    let userpass = atmarksep[0];
+    let slashsep: Vec<&str> = userpass.split("/").collect();
+    v.push(slashsep[0].to_string());
+    v.push(slashsep[1].to_string());
+    v.push(atmarksep[1].to_string());
+    return v;
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let options = HttpTest::from_args();
-
 
     let templates = Tera::new("templates/**/*").unwrap();
     //let in_docker = Path::new("/.dockerenv").exists();
@@ -90,37 +101,29 @@ async fn main() -> std::io::Result<()> {
 
     data.lock().unwrap().register = options.register;
 
-
-    let mut ocistring: String = "".to_string();
-
-    if let Some(t) = options.ocistring {
-        ocistring = t;
-    }
+    let mut ocistring: String = options.ocistring.unwrap_or(String::from(""));
 
     if let Some(dbe) = options.dbenv {
-        match std::env::var(&dbe)
-        {
-            Err(_) => {
-                eprintln!("Error get env var {}", dbe.to_string());
-                exit(1);
-            }
-            Ok(v) => ocistring = v,
+        match std::env::var(&dbe) {
+            Ok(v) =>
+                ocistring = v,
+            Err(_) =>
+                panic!("Error get env var {}", dbe.to_string()),
         }
     }
+
     if ocistring == "" {
-        eprintln!("--ocistring <oracle db connect string> or --dbenv <ENV name which holds oracle db connection string> needed");
-        exit(1);
+        panic!("--ocistring <oracle db connect string> or --dbenv <ENV name which holds oracle db connection string> needed");
     }
 
     // oracle形式の connection string を分解して、username,password,connect stringの形式にする
-    let atmarksep: Vec<&str> = ocistring.split("@").collect();
-    let userpass = atmarksep[0];
-    let slashsep: Vec<&str> = userpass.split("/").collect();
+    let ocisep = divide_ocistring(ocistring);
 
     let manager = OracleConnectionManager::new(
-        slashsep[0],
-        slashsep[1],
-        atmarksep[1]);
+        &ocisep[0],
+        &ocisep[1],
+        &ocisep[2]);
+
 
     let pool = r2d2::Pool::builder()
         .max_size(5)
@@ -129,9 +132,9 @@ async fn main() -> std::io::Result<()> {
 
     let host = format!("0.0.0.0:{}", &options.port);
     let domain = if options.ssl {
-        options.domain.map_or("".to_string(), |v| v.to_string())
+        options.domain.unwrap_or(String::from(""))
     } else {
-        "".to_string()
+        String::from("")
     };
 
     let sslmode = options.ssl;
@@ -155,17 +158,16 @@ async fn main() -> std::io::Result<()> {
             .data(pool.clone())
             .data(templates.clone())
             .data(data.clone())
-    });
+    })
+        .workers(2);
     if options.ssl {
         return server
-            .workers(2)
             .bind_openssl(&host, builder)
             .expect(&format!("cannot run SSL server at  {}", &host))
             .run()
             .await;
     }
     server
-        .workers(2)
         .bind(&host)
         .expect(&format!("cannot run server at  {} ", &host))
         .run()

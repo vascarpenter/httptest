@@ -45,7 +45,7 @@ pub async fn index(db: web::Data<Pool<OracleConnectionManager>>,
 		let v: Value = serde_json::from_str(idstr.as_str())?;
 		let str = format!("ようこそ、 {} さん", v["username"]);
 		ctx.insert("Title", &str);
-		userid = v["userid"].as_i64().map_or(0, |v| v);
+		userid = v["userid"].as_i64().unwrap_or(0);
 	}
 	if userid == 0 {
 		id.forget();
@@ -97,7 +97,7 @@ pub(crate) async fn post_index(db: web::Data<Pool<OracleConnectionManager>>,
 	let mut userid = 0;
 	if let Some(idstr) = id.identity() {
 		let v: Value = serde_json::from_str(idstr.as_str())?;
-		userid = v["userid"].as_i64().map_or(0, |v| v);
+		userid = v["userid"].as_i64().unwrap_or(0);
 
 		//println!("{:?} userid={}", v, userid);
 	}
