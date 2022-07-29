@@ -11,9 +11,9 @@ use thiserror::Error;
 // HTML構成用のstruct
 #[derive(Serialize)]
 pub struct TempStruct {
-	date: String,
-	temp: String,
-	memo: Option<String>,
+	pub date: String,
+	pub temp: String,
+	pub memo: Option<String>,
 }
 
 #[derive(Error, Debug)]

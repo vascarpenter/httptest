@@ -19,6 +19,7 @@ mod index;
 mod logout;
 mod login;
 mod register;
+mod api;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "httptest", about = "httptest example")]
@@ -147,6 +148,7 @@ async fn main() -> std::io::Result<()> {
                     .domain(&domain)
                     .name("auth-cookie")
                     .secure(sslmode)))
+            .service(api::api)
             .service(login::login)
             .service(login::post_login)
             .service(logout::logout)
