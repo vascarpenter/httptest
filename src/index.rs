@@ -9,7 +9,7 @@ use tera::{Context, Tera};
 use thiserror::Error;
 
 // HTML構成用のstruct
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TempStruct {
 	pub date: String,
 	pub temp: String,

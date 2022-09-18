@@ -55,11 +55,16 @@ pub struct HttpTest {
     /// environment variable name which contains oci connect string
     #[structopt(long)]
     dbenv: Option<String>,
+
+    /// api access key
+    #[structopt(long)]
+    apikey: Option<String>,
 }
 
 #[derive(Debug, Default)]
 pub struct GlobalData {
     register: bool,
+    apikey: String,
 }
 // oracle形式の connection string を分解して、username,password,connect stringの形式にする
 
@@ -101,8 +106,15 @@ async fn main() -> std::io::Result<()> {
     let data = Arc::new(Mutex::new(GlobalData::default()));
 
     data.lock().unwrap().register = options.register;
+    if let Some(t) = options.apikey {
+        data.lock().unwrap().apikey = t;
+    }
 
-    let mut ocistring: String = options.ocistring.unwrap_or(String::from(""));
+    let mut ocistring: String = "".to_string();
+
+    if let Some(t) = options.ocistring {
+        ocistring = t;
+    }
 
     if let Some(dbe) = options.dbenv {
         match std::env::var(&dbe) {
@@ -149,6 +161,7 @@ async fn main() -> std::io::Result<()> {
                     .name("auth-cookie")
                     .secure(sslmode)))
             .service(api::api)
+            .service(api::apipost)
             .service(login::login)
             .service(login::post_login)
             .service(logout::logout)
