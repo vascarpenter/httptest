@@ -26,7 +26,7 @@
 
 ### 実行
 
-- `./target/debug/httptest --ocistring admin/pass@//123.45.67/XEPDB1 --ssl --certkey <certkey> --domain <domain> --privkey <privkey>`
+- `./target/debug/httptest --ocistring admin/pass@//123.45.67/XEPDB1 --ssl --certkey <certkey> --domain <domain> --privkey <privkey> --apikey APIKEY`
 - `./target/debug/httptest --dbenv OCISTRING`
 
 - 起動時オプション
@@ -34,8 +34,10 @@
   - `--ssl`  SSLサポート (`--certkey, --privkey, --domain` を指定すること)
   - `--register` ユーザー登録ページを有効にする つけないと登録もできません
   - `--port` 待ち受けポート番号 ただし1024番ポート以前のポート番号は、開放時にroot権限が必要です
+  - `--apikey` android access用の API key stringを指定
 
 ### 変更点
 
 - bug fix
 - README をわかりやすく
+- apiを実装
